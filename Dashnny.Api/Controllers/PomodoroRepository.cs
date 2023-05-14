@@ -34,7 +34,7 @@ public class PomodoroRepository
 	{
 		using var request = new HttpRequestMessage(HttpMethod.Post, "pomodoros/query");
 		request.Headers.TryAddWithoutValidation("X-API-Key", dBApiConnection.ApiKey);
-		var query = "{ \"query\": [{ \"isActive\": true }] }";
+		var query = "{ \"query\": [{ \"status\": 0 }] }";
 		request.Content = new StringContent(query, Encoding.UTF8, "application/json");
 		var responseMessage = await httpClient.SendAsync(request);
 		return JsonSerializer.Deserialize<QueryResponse<Pomodoro>>(responseMessage.Content.ReadAsStream(), new JsonSerializerOptions

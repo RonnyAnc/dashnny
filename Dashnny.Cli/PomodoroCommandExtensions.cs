@@ -47,7 +47,6 @@ public static class PomodoroCommandExtensions
 			request.Headers.TryAddWithoutValidation("X-Space-App-Key", dashnnyConfiguration.DashnnyApiKey);
 			request.Content = content;
 			using var response = await new HttpClient().SendAsync(request);
-			Console.WriteLine(response.StatusCode);
 			if (!response.IsSuccessStatusCode)
 			{
 				Console.WriteLine(response.StatusCode);
