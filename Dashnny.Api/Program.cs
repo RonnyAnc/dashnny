@@ -1,30 +1,20 @@
-using System.Net.Http.Headers;
-using Dashnny.Api;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dashnny.Api.Controllers;
-using SlackNet.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+	options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString;
+	options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+	options.JsonSerializerOptions.WriteIndented = true;
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-var dbApiConnection = new DBApiConnection(
-	new Uri(builder.Configuration["DASHNNY_DB_URL"]), builder.Configuration["DASHNNY_DB_API_KEY"]);
-builder.Services.AddSingleton(dbApiConnection);
-builder.Services.AddSingleton(new SlackOptions
-{
-	UserApiToken = builder.Configuration["SLACK_USER_API_TOKEN"],
-	UserBotToken = builder.Configuration["SLACK_BOT_API_TOKEN"],
-	UserId = builder.Configuration["SLACK_USER_ID"]
-});
-builder.Services.AddSlackNet(c => c.UseApiToken(builder.Configuration["SLACK_USER_API_TOKEN"]));
-builder.Services.AddHttpClient<PomodoroRepository>(client =>
-{
-	client.BaseAddress = dbApiConnection.DbUri;
-});
-builder.Services.AddHostedService<PomodoroStatusChecker>();
+builder.Services.AddPomodoroFeatures(builder.Configuration);
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();

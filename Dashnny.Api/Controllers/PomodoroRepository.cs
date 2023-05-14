@@ -44,6 +44,20 @@ public class PomodoroRepository
 		}).Items.FirstOrDefault();
 	}
 
+	internal async Task<List<Pomodoro>> GetAll()
+	{
+		using var request = new HttpRequestMessage(HttpMethod.Post, "pomodoros/query");
+		request.Headers.TryAddWithoutValidation("X-API-Key", dBApiConnection.ApiKey);
+		var query = "{ \"query\": [] }";
+		request.Content = new StringContent(query, Encoding.UTF8, "application/json");
+		var responseMessage = await httpClient.SendAsync(request);
+		return JsonSerializer.Deserialize<QueryResponse<Pomodoro>>(responseMessage.Content.ReadAsStream(), new JsonSerializerOptions
+		{
+			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+			WriteIndented = true
+		}).Items;
+	}
+
 	internal async Task Update(Pomodoro pomodoro)
 	{
 		using var request = new HttpRequestMessage(HttpMethod.Patch, $"pomodoros/items/{pomodoro.Key}");
