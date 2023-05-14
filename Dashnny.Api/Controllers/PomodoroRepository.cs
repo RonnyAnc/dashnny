@@ -64,8 +64,7 @@ public class PomodoroRepository
 		request.Headers.TryAddWithoutValidation("X-API-Key", dBApiConnection.ApiKey);
 		var pomodoroUpdateSet = new PomodoroUpdateSet
 		{
-			IsActive = pomodoro.IsActive,
-			IsCompleted = pomodoro.IsCompleted
+			Status = pomodoro.Status,
 		};
 		request.Content = new UpdateItemQuery<PomodoroUpdateSet>().Serialize(pomodoroUpdateSet);
 		var responseMessage = await httpClient.SendAsync(request);
@@ -80,6 +79,7 @@ public class PomodoroUpdateSet
 {
 	public bool IsActive { get; set; }
 	public bool IsCompleted { get; set; }
+	public PomodoroStatus Status { get; set; }
 }
 
 public class QueryResponse<T>

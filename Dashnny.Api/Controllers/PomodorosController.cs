@@ -10,16 +10,14 @@ public class PomodorosController : ControllerBase
 
 	private readonly ILogger<PomodorosController> _logger;
 	private readonly PomodoroRepository pomodoroRepository;
-	private readonly ISlackApiClient slackClient;
-	private readonly SlackOptions slackOptions;
+	private readonly SlackConfigurations slackConfigurations;
 	private readonly StartPomodoro startPomodoro;
 
-	public PomodorosController(ILogger<PomodorosController> logger, PomodoroRepository pomodoroRepository, StartPomodoro startPomodoro, ISlackApiClient slackClient, SlackOptions slackOptions)
+	public PomodorosController(ILogger<PomodorosController> logger, PomodoroRepository pomodoroRepository, StartPomodoro startPomodoro, SlackConfigurations slackOptions)
 	{
 		_logger = logger;
 		this.pomodoroRepository = pomodoroRepository;
-		this.slackClient = slackClient;
-		this.slackOptions = slackOptions;
+		this.slackConfigurations = slackOptions;
 		this.startPomodoro = startPomodoro;
 	}
 
@@ -27,11 +25,13 @@ public class PomodorosController : ControllerBase
 	public async Task<StartPomodoroResponse> StartPomodoro(StartPomodoroRequest pomodoroRequest, CancellationToken cancellationToken)
 	{
 		var pomodoroResponse = await startPomodoro.Execute(pomodoroRequest);
+		var slackConfiguration = pomodoroRequest.IsFromWork ? slackConfigurations.Work : slackConfigurations.Personal;
+		var slackClient = new SlackApiClient(slackConfiguration.UserApiToken);
 		await slackClient.Dnd.SetSnooze(pomodoroRequest.DurationInMinutes, cancellationToken);
-		var botClient = slackClient.WithAccessToken(slackOptions.UserBotToken);
-		await botClient.Chat.PostMessage(new SlackNet.WebApi.Message { Channel = slackOptions.UserId, Text = "Pomodoro Started!" });
+		var botClient = slackClient.WithAccessToken(slackConfiguration.BotToken);
+		await botClient.Chat.PostMessage(new SlackNet.WebApi.Message { Channel = slackConfiguration.UserId, Text = "Pomodoro Started!" });
 		await botClient.Chat.ScheduleMessage(
-			new SlackNet.WebApi.Message { Channel = slackOptions.UserId, Text = "Pomodoro Finished!" },
+			new SlackNet.WebApi.Message { Channel = slackConfiguration.UserId, Text = "Pomodoro Finished!" },
 			DateTime.Now.AddMinutes(pomodoroRequest.DurationInMinutes).AddSeconds(1));
 
 		return new StartPomodoroResponse

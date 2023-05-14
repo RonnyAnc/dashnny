@@ -1,11 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System.CommandLine;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Microsoft.Extensions.Configuration;
+
+var configuration = new ConfigurationBuilder()
+	.AddEnvironmentVariables()
+	.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "clisettings.json"))
+	.Build();
 
 var rootCommand = new RootCommand("Dashnny base command");
 
-rootCommand.AddPomodorosFeatures();
+rootCommand.AddPomodorosFeatures(configuration);
 
 await rootCommand.InvokeAsync(args);

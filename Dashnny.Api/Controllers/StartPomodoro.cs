@@ -21,7 +21,8 @@ public class StartPomodoro
 			pomodoroRequest.StartTime,
 			pomodoroRequest.StartTime.AddMinutes(pomodoroRequest.DurationInMinutes),
 			pomodoroRequest.DurationInMinutes,
-			pomodoroRequest.NumberInCycle
+			pomodoroRequest.NumberInCycle,
+			pomodoroRequest.IsFromWork
 		);
 		await pomodoroRepository.Create(pomodoro);
 		return new StartPomodoroResponse
@@ -37,6 +38,7 @@ public class StartPomodoroRequest
 	public DateTime StartTime { get; set; }
 	public int DurationInMinutes { get; set; }
 	public int NumberInCycle { get; set; }
+	public bool IsFromWork { get; set; }
 }
 
 public class StartPomodoroResponse

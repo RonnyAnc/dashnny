@@ -2,20 +2,25 @@ using System.CommandLine;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Dashnny.Api.Controllers;
+using Microsoft.Extensions.Configuration;
 
 public static class PomodoroCommandExtensions
 {
-	public static RootCommand AddPomodorosFeatures(this RootCommand rootCommand)
+	public static RootCommand AddPomodorosFeatures(this RootCommand rootCommand, Microsoft.Extensions.Configuration.IConfigurationRoot configuration)
 	{
 		var pomodoros = new Command("pomodoros", "Pomodoros features");
-		pomodoros.AddStartPomodoroCommand();
-		pomodoros.AddGetAllPomodorosCommand();
-		pomodoros.AddGetActivePomodoro();
+		var dashnnyConfiguration = new DashnnyConfiguration(
+			configuration.GetValue<string>("DASHNNY_API_URL"),
+			configuration.GetValue<string>("DASHNNY_API_KEY"));
+		pomodoros.AddStartPomodoroCommand(dashnnyConfiguration);
+		pomodoros.AddGetAllPomodorosCommand(dashnnyConfiguration);
+		pomodoros.AddGetActivePomodoro(dashnnyConfiguration);
 		rootCommand.Add(pomodoros);
 		return rootCommand;
 	}
 
-	private static Command AddStartPomodoroCommand(this Command parentCommand)
+	private static Command AddStartPomodoroCommand(this Command parentCommand, DashnnyConfiguration dashnnyConfiguration)
 	{
 		var startPomodoro = new Command("start", "Start a pomodoro");
 		var durationOption = new Option<int>(name: "--duration", description: "Pomodoro duration in minutes");
@@ -24,80 +29,86 @@ public static class PomodoroCommandExtensions
 		var labelOption = new Option<string>(name: "--label", description: "Label for pomodoro");
 		startPomodoro
 			.AddOption(labelOption);
-		startPomodoro.SetHandler(async (duration, label) =>
+		var workOption = new Option<bool>(name: "--work", description: "Mark pomodoro as a work pomodoro and send to different work slack workspace if configured");
+		startPomodoro
+			.AddOption(workOption);
+		startPomodoro.SetHandler(async (duration, label, work) =>
 		{
 			var startPomodoroRequest = new StartPomodoroRequest
 			{
 				DurationInMinutes = duration,
 				Label = label,
 				NumberInCycle = 1,
-				StartTime = DateTime.Now
+				StartTime = DateTime.Now,
+				IsFromWork = work
 			};
-			var serializedRequest = JsonSerializer.Serialize(startPomodoroRequest, new JsonSerializerOptions
-			{
-				NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
-				PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-				WriteIndented = true
-			});
-			var content = new StringContent(serializedRequest, Encoding.UTF8, "application/json");
-			using var response = await new HttpClient().PostAsync("https://localhost:7248/Pomodoros", content);
+			var content = Serialize(startPomodoroRequest);
+			using var request = new HttpRequestMessage(HttpMethod.Post, $"{dashnnyConfiguration.DashnnyApiUrl}/Pomodoros");
+			request.Headers.TryAddWithoutValidation("X-Space-App-Key", dashnnyConfiguration.DashnnyApiKey);
+			request.Content = content;
+			using var response = await new HttpClient().SendAsync(request);
+			Console.WriteLine(response.StatusCode);
 			if (!response.IsSuccessStatusCode)
 			{
-				Console.WriteLine(await response.Content.ReadAsStringAsync());
+				Console.WriteLine(response.StatusCode);
+				var error = await response.Content.ReadAsStringAsync();
+				Console.WriteLine(error);
+				throw new Exception(error);
 			}
 			Console.WriteLine("⏳ Pomodoro Started");
-		}, durationOption, labelOption);
+		}, durationOption, labelOption, workOption);
 		parentCommand.Add(startPomodoro);
 		return parentCommand;
 	}
 
-	private static Command AddGetAllPomodorosCommand(this Command parentCommand)
+	private static StringContent Serialize<T>(T startPomodoroRequest)
+	{
+		var serializedObject = JsonSerializer.Serialize(startPomodoroRequest, new JsonSerializerOptions
+		{
+			NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
+			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+			WriteIndented = true
+		});
+		return new StringContent(serializedObject, Encoding.UTF8, "application/json");
+	}
+
+	private static Command AddGetAllPomodorosCommand(this Command parentCommand, DashnnyConfiguration dashnnyConfiguration)
 	{
 		var listPomodoros = new Command("list", "List pomodoros");
 		listPomodoros.SetHandler(async () =>
 		{
-			using var response = await new HttpClient().GetAsync("https://localhost:7248/Pomodoros");
+			using var request = new HttpRequestMessage(HttpMethod.Get, $"{dashnnyConfiguration.DashnnyApiUrl}/Pomodoros");
+			request.Headers.TryAddWithoutValidation("X-Space-App-Key", dashnnyConfiguration.DashnnyApiKey);
+			using var response = await new HttpClient().SendAsync(request);
 			if (!response.IsSuccessStatusCode)
 			{
-				Console.WriteLine(await response.Content.ReadAsStringAsync());
+				Console.WriteLine(response.StatusCode);
+				var error = await response.Content.ReadAsStringAsync();
+				Console.WriteLine(error);
+				throw new Exception(error);
 			}
 			var serializedPomodoros = await response.Content.ReadAsStringAsync();
-			var pomodoros = JsonSerializer.Deserialize<List<Pomodoro>>(serializedPomodoros, new JsonSerializerOptions
-			{
-				NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
-				PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-				WriteIndented = true
-			});
-			PrintLine();
-			PrintRow("Id", "Label", "Start Time", "End Time", "Is Active", "Is Completed");
-			PrintLine();
-			foreach (var pomodoro in pomodoros)
-			{
-				PrintRow(
-					$"{pomodoro.Id}",
-					$"{pomodoro.Label}",
-					$"{pomodoro.StartTime}",
-					$"{pomodoro.EndTime}",
-					$"{pomodoro.IsActive}",
-					$"{pomodoro.IsCompleted}");
-			}
-
+			Console.WriteLine(serializedPomodoros);
 		});
 		parentCommand.Add(listPomodoros);
 		return parentCommand;
 	}
 
-	private static Command AddGetActivePomodoro(this Command parentCommand)
+	private static Command AddGetActivePomodoro(this Command parentCommand, DashnnyConfiguration dashnnyConfiguration)
 	{
 		var getPomodoro = new Command("get", "Get a pomodoro");
 		var isActiveOption = new Option<bool>("--active", "Get the active pomodoro");
 		getPomodoro.AddOption(isActiveOption);
 		getPomodoro.SetHandler(async (_) =>
 		{
-			using var response = await new HttpClient().GetAsync($"https://localhost:7248/Pomodoros?isActive=true");
+			using var request = new HttpRequestMessage(HttpMethod.Get, $"{dashnnyConfiguration.DashnnyApiUrl}/Pomodoros?isActive=true");
+			request.Headers.TryAddWithoutValidation("X-Space-App-Key", dashnnyConfiguration.DashnnyApiKey);
+			using var response = await new HttpClient().SendAsync(request);
 			if (!response.IsSuccessStatusCode)
 			{
-				Console.WriteLine(await response.Content.ReadAsStringAsync());
+				var error = await response.Content.ReadAsStringAsync();
+				Console.WriteLine(error);
+				throw new Exception(error);
 			}
 			var serializedPomodoros = await response.Content.ReadAsStringAsync();
 			Console.WriteLine(serializedPomodoros);
@@ -105,37 +116,5 @@ public static class PomodoroCommandExtensions
 		}, isActiveOption);
 		parentCommand.Add(getPomodoro);
 		return parentCommand;
-	}
-
-	static void PrintLine()
-	{
-		Console.WriteLine(new string('-', tableWidth));
-	}
-	static int tableWidth = 150;
-	static void PrintRow(params string[] columns)
-	{
-		int width = (tableWidth - columns.Length) / columns.Length;
-		string row = "|";
-
-		foreach (string column in columns)
-		{
-			row += AlignCentre(column, width) + "|";
-		}
-
-		Console.WriteLine(row);
-	}
-
-	static string AlignCentre(string text, int width)
-	{
-		text = text.Length > width ? text.Substring(0, width - 3) + "..." : text;
-
-		if (string.IsNullOrEmpty(text))
-		{
-			return new string(' ', width);
-		}
-		else
-		{
-			return text.PadRight(width - (width - text.Length) / 2).PadLeft(width);
-		}
 	}
 }
