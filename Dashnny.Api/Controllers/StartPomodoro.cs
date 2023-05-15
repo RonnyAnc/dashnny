@@ -39,6 +39,7 @@ public class StartPomodoroRequest
 	public int DurationInMinutes { get; set; }
 	public int NumberInCycle { get; set; }
 	public bool IsFromWork { get; set; }
+	public string? NotificationChannel { get; set; }
 }
 
 public class StartPomodoroResponse

@@ -32,7 +32,10 @@ public static class PomodoroCommandExtensions
 		var workOption = new Option<bool>(name: "--work", description: "Mark pomodoro as a work pomodoro and send to different work slack workspace if configured");
 		startPomodoro
 			.AddOption(workOption);
-		startPomodoro.SetHandler(async (duration, label, work) =>
+		var channelOption = new Option<string>(name: "--channel", description: "(optional) Channel to notify pomodoros. Write just the name without the '#'");
+		startPomodoro
+			.AddOption(channelOption);
+		startPomodoro.SetHandler(async (duration, label, work, channel) =>
 		{
 			var startPomodoroRequest = new StartPomodoroRequest
 			{
@@ -40,7 +43,8 @@ public static class PomodoroCommandExtensions
 				Label = label,
 				NumberInCycle = 1,
 				StartTime = DateTime.Now,
-				IsFromWork = work
+				IsFromWork = work,
+				NotificationChannel = channel
 			};
 			var content = Serialize(startPomodoroRequest);
 			using var request = new HttpRequestMessage(HttpMethod.Post, $"{dashnnyConfiguration.DashnnyApiUrl}/Pomodoros");
@@ -55,7 +59,7 @@ public static class PomodoroCommandExtensions
 				throw new Exception(error);
 			}
 			Console.WriteLine("⏳ Pomodoro Started");
-		}, durationOption, labelOption, workOption);
+		}, durationOption, labelOption, workOption, channelOption);
 		parentCommand.Add(startPomodoro);
 		return parentCommand;
 	}

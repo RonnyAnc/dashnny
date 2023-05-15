@@ -29,9 +29,10 @@ public class PomodorosController : ControllerBase
 		var slackClient = new SlackApiClient(slackConfiguration.UserApiToken);
 		await slackClient.Dnd.SetSnooze(pomodoroRequest.DurationInMinutes, cancellationToken);
 		var botClient = slackClient.WithAccessToken(slackConfiguration.BotToken);
-		await botClient.Chat.PostMessage(new SlackNet.WebApi.Message { Channel = slackConfiguration.UserId, Text = "Pomodoro Started!" });
+		var channel = pomodoroRequest.NotificationChannel ?? slackConfiguration.UserId;
+		await botClient.Chat.PostMessage(new SlackNet.WebApi.Message { Channel = channel, Text = "Pomodoro Started!" });
 		await botClient.Chat.ScheduleMessage(
-			new SlackNet.WebApi.Message { Channel = slackConfiguration.UserId, Text = "Pomodoro Finished!" },
+			new SlackNet.WebApi.Message { Channel = channel, Text = "Pomodoro Finished!" },
 			DateTime.Now.AddMinutes(pomodoroRequest.DurationInMinutes).AddSeconds(1));
 
 		return new StartPomodoroResponse
