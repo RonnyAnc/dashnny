@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@types/luxon": "^3.3.0",
+    "luxon": "^3.3.0"
+  }
+}

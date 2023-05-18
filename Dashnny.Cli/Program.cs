@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 var configuration = new ConfigurationBuilder()
 	.AddEnvironmentVariables()
-	.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "clisettings.json"), true)
+	// .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "clisettings.json"), true)
 	.Build();
 
 var rootCommand = new RootCommand("Dashnny base command");

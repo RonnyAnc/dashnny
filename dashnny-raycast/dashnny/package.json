@@ -1,0 +1,64 @@
+{
+	"$schema": "https://www.raycast.com/schemas/extension.json",
+	"name": "dashnny",
+	"title": "Dashnny",
+	"description": "Allow me to execute dashnny features",
+	"icon": "command-icon.png",
+	"author": "ronnyancorini",
+	"categories": [
+		"Productivity"
+	],
+	"license": "MIT",
+	"commands": [
+		{
+			"name": "index",
+			"title": "Start Pomodoro",
+			"description": "Start a pomodoro with given configuration",
+			"mode": "view"
+		},
+		{
+			"name": "remaining",
+			"title": "Active pomodoro",
+			"description": "Get remaining time for active pomodoro",
+			"mode": "view"
+		}
+	],
+	"preferences": [
+		{
+			"name": "dashnnyApiKey",
+			"type": "password",
+			"title": "API Key",
+			"placeholder": "Your Dashnny API Key",
+			"required": true,
+			"description": "Your Dashnny API Key"
+		},
+		{
+			"name": "dashnnyApiUrl",
+			"type": "textfield",
+			"title": "API Url",
+			"placeholder": "Your Dashnny API Url",
+			"required": true,
+			"description": "Your Dashnny API Url"
+		}
+	],
+	"dependencies": {
+		"@raycast/api": "^1.51.2",
+		"@raycast/utils": "^1.6.1",
+		"node-fetch": "^3.3.1"
+	},
+	"devDependencies": {
+		"@raycast/eslint-config": "1.0.5",
+		"@types/node": "18.8.3",
+		"@types/react": "18.0.9",
+		"eslint": "^7.32.0",
+		"prettier": "^2.5.1",
+		"typescript": "^4.4.3"
+	},
+	"scripts": {
+		"build": "ray build -e dist",
+		"dev": "ray develop",
+		"fix-lint": "ray lint --fix",
+		"lint": "ray lint",
+		"publish": "npx @raycast/api@latest publish"
+	}
+}

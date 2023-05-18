@@ -39,3 +39,9 @@ msbuild.wrn
 **/launchSettings.json
 
 Dashnny.Cli/clisettings.json
+
+## Raycast extension
+**/node_modules
+
+# Raycast specific files
+**raycast-env.d.ts

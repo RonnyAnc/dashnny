@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dashnny.Api.Controllers;
+using SlackNet.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSlackNet(c => c.UseApiToken(builder.Configuration["SLACK_BOT_API_TOKEN"]));
 builder.Services.AddPomodoroFeatures(builder.Configuration);
 builder.Services.AddSwaggerGen();
 
@@ -29,6 +31,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseSlackNet(c => c.UseSigningSecret(builder.Configuration["SLACK_SIGNING_SECRET"]).MapToPrefix("api/slack"));
 
 app.MapControllers();
 
