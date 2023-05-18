@@ -29,7 +29,7 @@ export default function Command() {
 		.then(response => response.json())
 		.then((pomodorosParam) => {
 			const pomodoros = pomodorosParam as Pomodoro[]
-			if (pomodoros.length > 0) {
+			if (pomodoros.length > 0 && pomodoros[0] != null) {
 				const pomodoro = pomodoros[0];
 				const diff = DateTime.fromISO(pomodoro.endTime).diff(DateTime.now(), ['hours', 'minutes', 'seconds']);
 				const formattedDiff = `${diff.hours.toString().padStart(2, '0')}:${diff.minutes.toString().padStart(2, '0')}:${Math.floor(diff.seconds).toString().padStart(2, '0')}`;
