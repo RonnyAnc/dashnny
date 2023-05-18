@@ -57,7 +57,7 @@ export default function Command() {
       <Form.TextField id="label" title="Label" placeholder="Enter text" defaultValue="" />
 			<Form.TextField id="duration" title="Duration" placeholder="Duration in minutes (25 default)" defaultValue="25" />
 			<Form.Checkbox id="isFromWork" title="Is from work" label="Is from work?" defaultValue={false}></Form.Checkbox>
-      <Form.Dropdown id="dropdown" title="Dropdown" defaultValue="">
+      <Form.Dropdown id="channel" title="Dropdown" defaultValue="">
         <Form.Dropdown.Item value="" title="No channel" />
 				<Form.Dropdown.Item value="study" title="study" />
 				<Form.Dropdown.Item value="development-pomodoros" title="development-pomodoros" />
